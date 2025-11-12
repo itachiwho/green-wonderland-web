@@ -16,7 +16,8 @@ import {
   getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import {
-  getFirestore, collection, getDocs, addDoc, serverTimestamp, query, where, orderBy, limit
+  getFirestore, collection, getDocs, addDoc, serverTimestamp,
+  query, where, orderBy, limit
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 // Init
@@ -28,26 +29,23 @@ const db = getFirestore(app);
 const $ = (id) => document.getElementById(id);
 const money = (n) => { try { return "$" + Number(n).toLocaleString(); } catch { return "$" + n; } };
 const escapeHtml = (s) => (s || "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#39;'}[c]));
-const setStatus = (msg, isErr = false) => { const el=$("status"); el.textContent = msg; el.style.color = isErr ? "var(--warn)" : "var(--muted)"; };
+const setStatus = (msg, isErr = false) => { const el=$("status"); if (!el) return; el.textContent = msg; el.style.color = isErr ? "var(--warn)" : "var(--muted)"; };
 // History helpers
-const setHistStatus = (msg)=> { const el=document.getElementById("histStatus"); if (el) el.textContent = msg || ""; };
-const setHistSummary = (msg)=> { const el=document.getElementById("histSummary"); if (el) el.textContent = msg || ""; };
+const setHistStatus = (msg)=> { const el=$("histStatus"); if (el) el.textContent = msg || ""; };
+const setHistSummary = (msg)=> { const el=$("histSummary"); if (el) el.textContent = msg || ""; };
 
 // Format like "DD-MM-YYYY | h:mm AM" in Dhaka (client-side view)
 function formatDhakaLocal(dateLike) {
   const tz = "Asia/Dhaka";
   const d = dateLike instanceof Date ? dateLike : new Date(dateLike);
-
   const dGB = new Intl.DateTimeFormat("en-GB", {
     timeZone: tz, day: "2-digit", month: "2-digit", year: "numeric"
   }).format(d); // "DD/MM/YYYY"
   const [dd, mm, yyyy] = dGB.split("/");
   const datePart = `${dd}-${mm}-${yyyy}`;
-
   const timePart = new Intl.DateTimeFormat("en-US", {
     timeZone: tz, hour: "numeric", minute: "2-digit", hour12: true
   }).format(d);
-
   return `${datePart} | ${timePart}`;
 }
 
@@ -62,34 +60,36 @@ const state = {
 };
 
 // ---- Clear everything (cart, discount, search, filter, status) ----
-document.getElementById("btnClear").onclick = () => { 
-  clearAllUI(); 
-};
-
+const btnClear = $("btnClear");
+if (btnClear) {
+  btnClear.onclick = () => { clearAllUI(); };
+}
 function clearAllUI() {
-  // clear cart
   state.cart = {};
-  // reset discount
   state.discountPct = 0;
-  const disc = document.getElementById("discount");
-  if (disc) disc.value = 0;
-  // reset search & filter
-  const search = document.getElementById("search");
-  const filter = document.getElementById("filterCat");
-  if (search) search.value = "";
-  if (filter) filter.value = "";
-  // re-render
+  const disc = $("discount"); if (disc) disc.value = 0;
+  const search = $("search"); if (search) search.value = "";
+  const filter = $("filterCat"); if (filter) filter.value = "";
   renderCart();
   renderCatalog();
-  // clear status text
   setStatus("");
 }
 
+// ---- Header navigation (hash routing) ----
+const btnHistory = $("btnHistory");
+if (btnHistory) {
+  btnHistory.onclick = () => { location.hash = "#history"; };
+}
+const btnBackBilling = $("btnBackBilling");
+if (btnBackBilling) {
+  btnBackBilling.onclick = () => { location.hash = "#billing"; };
+}
+
 // -------- AUTH ----------
-$("btnLogin").onclick = async () => {
+$("btnLogin")?.addEventListener("click", async () => {
   setStatus("");
-  const email = $("email").value.trim();
-  const password = $("password").value;
+  const email = $("email")?.value?.trim();
+  const password = $("password")?.value;
   if (!email || !password) return setStatus("Enter email & password.", true);
   try {
     const cred = await signInWithEmailAndPassword(auth, email, password);
@@ -102,44 +102,44 @@ $("btnLogin").onclick = async () => {
   } catch (e) {
     setStatus("Sign-in failed: " + (e?.message || e), true);
   }
-};
+});
 
-$("btnLogout").onclick = async () => { 
-  await signOut(auth); 
-};
+$("btnLogout")?.addEventListener("click", async () => {
+  await signOut(auth);
+});
 
 onAuthStateChanged(auth, async (user) => {
   state.user = user || null;
-  $("btnLogout").disabled = !user;
-  $("btnLogin").disabled = !!user;
-  $("email").disabled = !!user;
-  $("password").disabled = !!user;
+  if ($("btnLogout")) $("btnLogout").disabled = !user;
+  if ($("btnLogin")) $("btnLogin").disabled = !!user;
+  if ($("email")) $("email").disabled = !!user;
+  if ($("password")) $("password").disabled = !!user;
+
   const tag = $("sellerNameTag");
   if (user) {
-    $("authState").textContent = `Signed in: ${user.email}`;
+    if ($("authState")) $("authState").textContent = `Signed in: ${user.email}`;
     state.displayName = user.displayName || "(no name)";
-    tag.classList.remove("hidden");
-    tag.textContent = state.displayName;
+    tag?.classList.remove("hidden");
+    if (tag) tag.textContent = state.displayName;
+
     await loadCatalogOnce();
-    await loadHistory();
+    // If user is already on #history, load it; otherwise skip until they navigate
+    if ((location.hash || "").toLowerCase() === "#history") {
+      await loadHistory();
+    }
   } else {
-    $("authState").textContent = "Not signed in";
+    if ($("authState")) $("authState").textContent = "Not signed in";
     state.displayName = null;
-    tag.classList.add("hidden");
-    // clear UI when signed out
+    tag?.classList.add("hidden");
+
+    // clear UI when signed out & force back to billing view
     clearAllUI();
-    const listHist = document.getElementById("history");
+    const listHist = $("history");
     if (listHist) listHist.innerHTML = `<div class="muted">Sign in to view.</div>`;
     setHistSummary("");
     setHistStatus("");
+    location.hash = "#billing";
   }
-  // History UI events
-const histRangeSel = document.getElementById("histRange");
-const btnHistRefresh = document.getElementById("btnHistRefresh");
-if (histRangeSel && btnHistRefresh) {
-  btnHistRefresh.onclick = () => loadHistory();
-  histRangeSel.onchange = () => loadHistory();
-}
 });
 
 // -------- CATALOG ----------
@@ -163,15 +163,20 @@ async function loadCatalogOnce() {
 function renderFilters() {
   const cats = Array.from(new Set(state.items.map(i => i.category))).sort();
   const sel = $("filterCat");
+  if (!sel) return;
   sel.innerHTML = '<option value="">All Categories</option>' + cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
   sel.onchange = renderCatalog;
-  $("search").oninput = renderCatalog;
+  const search = $("search");
+  if (search) search.oninput = renderCatalog;
 }
 
 function renderCatalog() {
-  const q = ($("search").value || "").toLowerCase().trim();
-  const cat = $("filterCat").value;
+  const searchEl = $("search");
+  const q = (searchEl?.value || "").toLowerCase().trim();
+  const cat = $("filterCat")?.value || "";
   const list = $("catalog");
+  if (!list) return;
+
   list.innerHTML = "";
 
   // QoL: pin popular items (quick-add row)
@@ -224,7 +229,6 @@ function pickQuickItems(ids) {
 }
 
 // -------- BUNDLES (QoL) --------
-// Define handy presets your staff can add in one click
 const BUNDLES = [
   { name: "Starter Pack", items: [
       { id: "geek-bar-basic", qty: 1 },
@@ -240,7 +244,7 @@ const BUNDLES = [
 
 function renderBundles() {
   const list = $("catalog");
-  if (!BUNDLES.length) return;
+  if (!list || !BUNDLES.length) return;
   const wrap = document.createElement("div");
   wrap.className = "row";
   wrap.style.margin = "8px 0 10px 0";
@@ -267,6 +271,7 @@ function addToCart(id) {
 
 function renderCart() {
   const c = $("cart");
+  if (!c) return;
   const entries = Object.values(state.cart);
   if (!entries.length) { c.innerHTML = `<div class="muted">Cart is empty.</div>`; calcTotals(); return; }
   c.innerHTML = "";
@@ -284,7 +289,6 @@ function renderCart() {
     `;
     c.appendChild(row);
   });
-  // plus/minus
   c.querySelectorAll("button.ghost").forEach(b => {
     b.onclick = () => {
       const id = b.dataset.id, op = b.dataset.op;
@@ -294,7 +298,6 @@ function renderCart() {
       renderCart();
     };
   });
-  // direct input
   c.querySelectorAll(".qtyInput").forEach(inp => {
     inp.onchange = () => {
       const id = inp.dataset.id;
@@ -309,39 +312,41 @@ function renderCart() {
 
 // Discount presets (QoL)
 const discountInput = $("discount");
-discountInput.oninput = () => {
-  state.discountPct = clamp(Number(discountInput.value || 0), 0, 90);
-  calcTotals();
-};
-// Handy shortcuts: 0/5/10/15%
-(function mountDiscountPresets(){
-  const parent = discountInput.parentElement;
-  const mk = (v)=> {
-    const b = document.createElement("button");
-    b.className = "ghost";
-    b.style.padding = "6px 10px";
-    b.textContent = v+"%";
-    b.onclick = () => { discountInput.value = v; state.discountPct = v; calcTotals(); };
-    return b;
+if (discountInput) {
+  discountInput.oninput = () => {
+    state.discountPct = clamp(Number(discountInput.value || 0), 0, 90);
+    calcTotals();
   };
-  [0,5,10,15].forEach(v => parent.appendChild(mk(v)));
-})();
+  (function mountDiscountPresets(){
+    const parent = discountInput.parentElement;
+    if (!parent) return;
+    const mk = (v)=> {
+      const b = document.createElement("button");
+      b.className = "ghost";
+      b.style.padding = "6px 10px";
+      b.textContent = v+"%";
+      b.onclick = () => { discountInput.value = v; state.discountPct = v; calcTotals(); };
+      return b;
+    };
+    [0,5,10,15].forEach(v => parent.appendChild(mk(v)));
+  })();
+}
 
 function calcTotals() {
   const entries = Object.values(state.cart);
   const subtotal = entries.reduce((s, x) => s + x.unitPrice * x.qty, 0);
   const discountAmt = Math.round(subtotal * (state.discountPct / 100));
   const total = Math.max(0, subtotal - discountAmt);
-  $("subtotal").textContent = money(subtotal);
-  $("discountAmt").textContent = money(discountAmt);
-  $("total").textContent = money(total);
+  $("subtotal") && ( $("subtotal").textContent = money(subtotal) );
+  $("discountAmt") && ( $("discountAmt").textContent = money(discountAmt) );
+  $("total") && ( $("total").textContent = money(total) );
   return { subtotal, discountAmt, total };
 }
 
 function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
 
 // -------- SAVE & SEND ----------
-$("btnSave").onclick = async () => {
+$("btnSave")?.addEventListener("click", async () => {
   if (state.saving) return;
   setStatus("");
   if (!state.user) return setStatus("Please sign in first.", true);
@@ -382,48 +387,50 @@ $("btnSave").onclick = async () => {
     if (!res.ok || !data.ok) {
       throw new Error(data?.error ? `${data.error}: ${data?.details || ""}` : `HTTP ${res.status}`);
     }
-setStatus("✅ Saved & posted to Discord.");
 
-// 🔹 NEW: Save the sale record to Firestore (for history)
-try {
-  await addDoc(collection(db, "sales"), {
-    sellerUid: state.user.uid,
-    sellerName: state.displayName || state.user.email,
-    subtotal,
-    discount: discountPct,
-    total,
-    ts: serverTimestamp(),       // server-side timestamp (accurate)
-    lineItems                    // full list of sold items
-  });
-} catch (e) {
-  console.warn("Failed to log sale:", e);
-  setStatus("✅ Posted to Discord. (Note: failed to log history, will retry next time)");
-}
+    setStatus("✅ Saved & posted to Discord.");
 
-// finally clear everything
-clearAllUI();
+    // Log the sale to Firestore for history (non-fatal if it fails)
+    try {
+      await addDoc(collection(db, "sales"), {
+        sellerUid: state.user.uid,
+        sellerName: state.displayName || state.user.email,
+        subtotal,
+        discount: discountPct,
+        total,
+        ts: serverTimestamp(),
+        lineItems
+      });
+    } catch (e) {
+      console.warn("Failed to log sale:", e);
+      setStatus("✅ Posted to Discord. (Note: failed to log history, will retry next time)");
+    }
+
+    // finally clear everything
+    clearAllUI();
   } catch (e) {
     setStatus("❌ Failed to save: " + (e?.message || e), true);
   } finally {
     state.saving = false;
-    $("btnSave").disabled = false;
+    if ($("btnSave")) $("btnSave").disabled = false;
   }
-};
+});
 
-// history loader + renderer
+// -------- HISTORY (loader + renderer) --------
 async function loadHistory() {
   setHistStatus("Loading…");
   setHistSummary("");
-  const list = document.getElementById("history");
-  if (!state.user) { if (list) list.innerHTML = `<div class="muted">Sign in to view.</div>`; setHistStatus(""); return; }
+  const list = $("history");
+  if (!state.user) {
+    if (list) list.innerHTML = `<div class="muted">Sign in to view.</div>`;
+    setHistStatus("");
+    return;
+  }
 
-  // Compute start time from range (hours)
-  const hrs = Number((document.getElementById("histRange")?.value) || 24);
+  const hrs = Number(($("histRange")?.value) || 24);
   const start = new Date(Date.now() - hrs * 60 * 60 * 1000);
 
   try {
-    // Query your own sales in the last N hours, newest first
-    // NOTE: Firestore may ask for an index (console will show a link). Click it once; done forever.
     const qy = query(
       collection(db, "sales"),
       where("sellerUid", "==", state.user.uid),
@@ -438,9 +445,8 @@ async function loadHistory() {
 
     snap.forEach(docSnap => {
       const d = docSnap.data();
-      const when = d.ts?.toDate ? d.ts.toDate() : new Date(); // serverTimestamp becomes Timestamp
+      const when = d.ts?.toDate ? d.ts.toDate() : new Date();
       totalSum += Number(d.total || 0);
-
       rows.push({
         id: docSnap.id,
         when,
@@ -461,7 +467,7 @@ async function loadHistory() {
 }
 
 function renderHistory(rows, totalSum, hrs) {
-  const list = document.getElementById("history");
+  const list = $("history");
   if (!list) return;
   if (!rows.length) {
     list.innerHTML = `<div class="muted">No sales found in the last ${hrs} hours.</div>`;
@@ -469,15 +475,12 @@ function renderHistory(rows, totalSum, hrs) {
     return;
   }
 
-  // Summary
   setHistSummary(`${rows.length} sale${rows.length>1?'s':''} | Total ${money(totalSum)}`);
 
-  // Rows
   list.innerHTML = "";
   rows.forEach(r => {
     const li = document.createElement("div");
     li.className = "history-row";
-
     const itemsText = r.lineItems.map(li => `${li.nameSnap || li.itemId} ×${li.qty}`).join(", ");
     li.innerHTML = `
       <div class="history-left">
@@ -490,11 +493,53 @@ function renderHistory(rows, totalSum, hrs) {
   });
 }
 
+// History UI events (bind once)
+const histRangeSel = $("histRange");
+const btnHistRefresh = $("btnHistRefresh");
+if (histRangeSel) histRangeSel.onchange = () => loadHistory();
+if (btnHistRefresh) btnHistRefresh.onclick = () => loadHistory();
+
+// -------- Router (hash) --------
+function showView(name) {
+  const billing = $("viewBilling");
+  const history = $("viewHistory");
+  if (!billing || !history) return;
+
+  if (name === "history") {
+    billing.classList.add("hidden");
+    history.classList.remove("hidden");
+    if (state.user) {
+      loadHistory();
+    } else {
+      const listHist = $("history");
+      if (listHist) listHist.innerHTML = `<div class="muted">Sign in to view.</div>`;
+      setHistSummary("");
+      setHistStatus("");
+    }
+  } else {
+    history.classList.add("hidden");
+    billing.classList.remove("hidden");
+  }
+}
+
+function handleHashChange() {
+  const h = (location.hash || "").toLowerCase();
+  if (h === "#history") return showView("history");
+  return showView("billing");
+}
+
+window.addEventListener("hashchange", handleHashChange);
+if (!location.hash) {
+  location.hash = "#billing";
+} else {
+  handleHashChange();
+}
+
 // ---- Keyboard QoL: Enter triggers Save when logged in ----
 document.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && state.user) {
     const active = document.activeElement;
     const isTyping = active && (active.tagName === "INPUT" || active.tagName === "SELECT");
-    if (!isTyping) $("btnSave").click();
+    if (!isTyping) $("btnSave")?.click();
   }
 });
