@@ -65,6 +65,10 @@
       <div class="row topbar">
         <div><b>Sales History</b> <span class="muted">Last N hours</span></div>
         <div class="row">
+          <select id="histSeller" class="hidden">
+            <option value="me" selected>My sales</option>
+            <option value="all">All sellers (admin)</option>
+          </select>
           <select id="histRange">
             <option value="6">Last 6h</option>
             <option value="12">Last 12h</option>
