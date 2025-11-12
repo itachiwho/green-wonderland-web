@@ -17,7 +17,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import {
   getFirestore, collection, getDocs, addDoc, serverTimestamp,
-  query, where, orderBy, limit
+  query, where, orderBy, limit, getDoc, doc
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 // Init
@@ -56,7 +56,9 @@ const state = {
   discountPct: 0,
   user: null,
   displayName: null,
-  saving: false
+  saving: false,
+  isAdmin: false,
+  sellers: []        // [{uid, name}]
 };
 
 // ---- Clear everything (cart, discount, search, filter, status) ----
@@ -76,14 +78,8 @@ function clearAllUI() {
 }
 
 // ---- Header navigation (hash routing) ----
-const btnHistory = $("btnHistory");
-if (btnHistory) {
-  btnHistory.onclick = () => { location.hash = "#history"; };
-}
-const btnBackBilling = $("btnBackBilling");
-if (btnBackBilling) {
-  btnBackBilling.onclick = () => { location.hash = "#billing"; };
-}
+$("btnHistory")?.addEventListener("click", () => { location.hash = "#history"; });
+$("btnBackBilling")?.addEventListener("click", () => { location.hash = "#billing"; });
 
 // -------- AUTH ----------
 $("btnLogin")?.addEventListener("click", async () => {
@@ -123,6 +119,10 @@ onAuthStateChanged(auth, async (user) => {
     if (tag) tag.textContent = state.displayName;
 
     await loadCatalogOnce();
+
+    // Detect admin + populate seller list if admin
+    await initAdminAndSellers();
+
     // If user is already on #history, load it; otherwise skip until they navigate
     if ((location.hash || "").toLowerCase() === "#history") {
       await loadHistory();
@@ -138,9 +138,52 @@ onAuthStateChanged(auth, async (user) => {
     if (listHist) listHist.innerHTML = `<div class="muted">Sign in to view.</div>`;
     setHistSummary("");
     setHistStatus("");
+    const sellerSel = $("histSeller");
+    if (sellerSel) { sellerSel.classList.add("hidden"); sellerSel.value = "me"; }
+    state.isAdmin = false;
+    state.sellers = [];
     location.hash = "#billing";
   }
 });
+
+// -------- ADMIN DETECTION + SELLER LIST ----------
+async function initAdminAndSellers() {
+  state.isAdmin = false;
+  const sellerSel = $("histSeller");
+  if (sellerSel) { sellerSel.classList.add("hidden"); sellerSel.innerHTML = `<option value="me" selected>My sales</option><option value="all">All sellers (admin)</option>`; }
+
+  try {
+    // Check my role
+    const meDoc = await getDoc(doc(db, "users", state.user.uid));
+    const role = meDoc.exists() ? meDoc.data()?.role : null;
+    state.isAdmin = (role === "admin");
+
+    if (!state.isAdmin) return; // nothing else to do
+
+    // Load sellers list for admins
+    const snap = await getDocs(collection(db, "users"));
+    state.sellers = [];
+    const opts = [
+      `<option value="me" selected>My sales</option>`,
+      `<option value="all">All sellers (admin)</option>`
+    ];
+    snap.forEach(d => {
+      const u = d.data() || {};
+      // show active users; if isActive missing, treat as active
+      if (u.isActive === false) return;
+      const name = u.displayName || u.email || d.id;
+      state.sellers.push({ uid: d.id, name });
+      opts.push(`<option value="${d.id}">${escapeHtml(name)}</option>`);
+    });
+    if (sellerSel) {
+      sellerSel.innerHTML = opts.join("");
+      sellerSel.classList.remove("hidden");
+      sellerSel.onchange = () => loadHistory();
+    }
+  } catch (e) {
+    console.warn("Failed to init admin/sellers:", e);
+  }
+}
 
 // -------- CATALOG ----------
 let catalogLoaded = false;
@@ -430,15 +473,34 @@ async function loadHistory() {
   const hrs = Number(($("histRange")?.value) || 24);
   const start = new Date(Date.now() - hrs * 60 * 60 * 1000);
 
-  try {
-    const qy = query(
+  // Determine which seller to view
+  const sellerSel = $("histSeller");
+  let mode = sellerSel ? sellerSel.value : "me";
+  if (!state.isAdmin) mode = "me";
+
+  // Build query
+  let qy;
+  if (state.isAdmin && mode === "all") {
+    // All sellers in time window (no composite index needed)
+    qy = query(
       collection(db, "sales"),
-      where("sellerUid", "==", state.user.uid),
       where("ts", ">=", start),
       orderBy("ts", "desc"),
-      limit(100)
+      limit(200)
     );
+  } else {
+    // Specific seller (me or chosen uid) — requires composite index (you created it)
+    const uid = (state.isAdmin && mode !== "me") ? mode : state.user.uid;
+    qy = query(
+      collection(db, "sales"),
+      where("sellerUid", "==", uid),
+      where("ts", ">=", start),
+      orderBy("ts", "desc"),
+      limit(200)
+    );
+  }
 
+  try {
     const snap = await getDocs(qy);
     const rows = [];
     let totalSum = 0;
@@ -458,7 +520,7 @@ async function loadHistory() {
       });
     });
 
-    renderHistory(rows, totalSum, hrs);
+    renderHistory(rows, totalSum, hrs, mode);
     setHistStatus("");
   } catch (e) {
     console.error(e);
@@ -466,16 +528,17 @@ async function loadHistory() {
   }
 }
 
-function renderHistory(rows, totalSum, hrs) {
+function renderHistory(rows, totalSum, hrs, mode) {
   const list = $("history");
   if (!list) return;
   if (!rows.length) {
     list.innerHTML = `<div class="muted">No sales found in the last ${hrs} hours.</div>`;
-    setHistSummary(`0 sales | Total $0`);
+    setHistSummary(`0 sales | Total $0${state.isAdmin ? (mode==='all' ? " | View: All" : mode==='me' ? " | View: Me" : " | View: Seller") : ""}`);
     return;
   }
 
-  setHistSummary(`${rows.length} sale${rows.length>1?'s':''} | Total ${money(totalSum)}`);
+  const viewLabel = state.isAdmin ? (mode==='all' ? "All" : mode==='me' ? "Me" : "Seller") : "Me";
+  setHistSummary(`${rows.length} sale${rows.length>1?'s':''} | Total ${money(totalSum)}${state.isAdmin ? ` | View: ${viewLabel}` : ""}`);
 
   list.innerHTML = "";
   rows.forEach(r => {
@@ -494,10 +557,8 @@ function renderHistory(rows, totalSum, hrs) {
 }
 
 // History UI events (bind once)
-const histRangeSel = $("histRange");
-const btnHistRefresh = $("btnHistRefresh");
-if (histRangeSel) histRangeSel.onchange = () => loadHistory();
-if (btnHistRefresh) btnHistRefresh.onclick = () => loadHistory();
+$("histRange")?.addEventListener("change", () => loadHistory());
+$("btnHistRefresh")?.addEventListener("click", () => loadHistory());
 
 // -------- Router (hash) --------
 function showView(name) {
