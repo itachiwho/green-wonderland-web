@@ -40,6 +40,30 @@ const state = {
   saving: false
 };
 
+// ---- Clear everything (cart, discount, search, filter, status) ----
+document.getElementById("btnClear").onclick = () => { 
+  clearAllUI(); 
+};
+
+function clearAllUI() {
+  // clear cart
+  state.cart = {};
+  // reset discount
+  state.discountPct = 0;
+  const disc = document.getElementById("discount");
+  if (disc) disc.value = 0;
+  // reset search & filter
+  const search = document.getElementById("search");
+  const filter = document.getElementById("filterCat");
+  if (search) search.value = "";
+  if (filter) filter.value = "";
+  // re-render
+  renderCart();
+  renderCatalog();
+  // clear status text
+  setStatus("");
+}
+
 // -------- AUTH ----------
 $("btnLogin").onclick = async () => {
   setStatus("");
@@ -59,7 +83,9 @@ $("btnLogin").onclick = async () => {
   }
 };
 
-$("btnLogout").onclick = async () => { await signOut(auth); };
+$("btnLogout").onclick = async () => { 
+  await signOut(auth); 
+};
 
 onAuthStateChanged(auth, async (user) => {
   state.user = user || null;
@@ -78,7 +104,8 @@ onAuthStateChanged(auth, async (user) => {
     $("authState").textContent = "Not signed in";
     state.displayName = null;
     tag.classList.add("hidden");
-    clearCart();
+    // clear UI when signed out
+    clearAllUI();
   }
 });
 
@@ -196,9 +223,6 @@ function renderBundles() {
 }
 
 // -------- CART ----------
-$("btnClear").onclick = () => { clearCart(); };
-function clearCart(){ state.cart = {}; renderCart(); }
-
 function addToCart(id) {
   const it = state.items.find(x => x.id === id);
   if (!it) return;
@@ -326,7 +350,8 @@ $("btnSave").onclick = async () => {
       throw new Error(data?.error ? `${data.error}: ${data?.details || ""}` : `HTTP ${res.status}`);
     }
     setStatus("✅ Saved & posted to Discord.");
-    clearCart();
+    // Clear everything after success
+    clearAllUI();
   } catch (e) {
     setStatus("❌ Failed to save: " + (e?.message || e), true);
   } finally {
@@ -335,7 +360,7 @@ $("btnSave").onclick = async () => {
   }
 };
 
-// ---- Keyboard QoL: Enter focuses Save when logged in ----
+// ---- Keyboard QoL: Enter triggers Save when logged in ----
 document.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && state.user) {
     const active = document.activeElement;
