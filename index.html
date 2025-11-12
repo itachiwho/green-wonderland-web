@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Green Wonderland — Billing</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <div class="brand">🌿 Green Wonderland — Billing</div>
+    <div class="row">
+      <div id="authState" class="pill">Not signed in</div>
+      <input id="email" placeholder="email" />
+      <input id="password" type="password" placeholder="password" />
+      <button id="btnLogin">Sign In</button>
+      <button id="btnLogout" class="ghost" disabled>Sign Out</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Catalog -->
+    <section class="card">
+      <div class="row topbar">
+        <div><b>Catalog</b> <span class="muted">click + to add</span></div>
+        <div class="row">
+          <input id="search" placeholder="Search (name or alias)"/>
+          <select id="filterCat"><option value="">All Categories</option></select>
+        </div>
+      </div>
+      <div id="catalog" class="list"></div>
+    </section>
+
+    <!-- Cart -->
+    <section class="card">
+      <div class="row topbar">
+        <div><b>Cart</b> <span id="sellerNameTag" class="tag hidden"></span></div>
+        <button id="btnClear" class="ghost">Clear</button>
+      </div>
+      <div id="cart"></div>
+      <div class="line"></div>
+      <div class="row totals">
+        <div class="row">
+          <label class="muted">Discount %</label>
+          <input id="discount" type="number" min="0" max="90" step="1" value="0" class="discountInput"/>
+        </div>
+        <div class="right">
+          <div>Subtotal: <b id="subtotal">$0</b></div>
+          <div>Discount: <b id="discountAmt">$0</b></div>
+          <div class="total">Total: <span id="total">$0</span></div>
+        </div>
+      </div>
+      <div class="row actions">
+        <small class="muted" id="status"></small>
+        <button id="btnSave">Save & Send to Discord</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- JS: module with Firebase + app logic -->
+  <script type="module" src="script.js"></script>
+</body>
+</html>
