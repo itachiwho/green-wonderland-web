@@ -20,46 +20,48 @@
   </header>
 
   <main>
-    <!-- Catalog -->
+    <!-- ===== BILLING VIEW (visible on #billing) ===== -->
     <div id="viewBilling" data-view="billing">
-    <section class="card">
-      <div class="row topbar">
-        <div><b>Catalog</b> <span class="muted">click + to add</span></div>
-        <div class="row">
-          <input id="search" placeholder="Search (name or alias)"/>
-          <select id="filterCat"><option value="">All Categories</option></select>
+      <!-- Catalog -->
+      <section class="card">
+        <div class="row topbar">
+          <div><b>Catalog</b> <span class="muted">click + to add</span></div>
+          <div class="row">
+            <input id="search" placeholder="Search (name or alias)"/>
+            <select id="filterCat"><option value="">All Categories</option></select>
+          </div>
         </div>
-      </div>
-      <div id="catalog" class="list"></div>
-    </section>
+        <div id="catalog" class="list"></div>
+      </section>
 
-    <!-- Cart -->
-    <section class="card">
-      <div class="row topbar">
-        <div><b>Cart</b> <span id="sellerNameTag" class="tag hidden"></span></div>
-        <button id="btnClear" class="ghost">Clear</button>
-      </div>
-      <div id="cart"></div>
-      <div class="line"></div>
-      <div class="row totals">
-        <div class="row">
-          <label class="muted">Discount %</label>
-          <input id="discount" type="number" min="0" max="90" step="1" value="0" class="discountInput"/>
+      <!-- Cart -->
+      <section class="card">
+        <div class="row topbar">
+          <div><b>Cart</b> <span id="sellerNameTag" class="tag hidden"></span></div>
+          <button id="btnClear" class="ghost">Clear</button>
         </div>
-        <div class="right">
-          <div>Subtotal: <b id="subtotal">$0</b></div>
-          <div>Discount: <b id="discountAmt">$0</b></div>
-          <div class="total">Total: <span id="total">$0</span></div>
+        <div id="cart"></div>
+        <div class="line"></div>
+        <div class="row totals">
+          <div class="row">
+            <label class="muted">Discount %</label>
+            <input id="discount" type="number" min="0" max="90" step="1" value="0" class="discountInput"/>
+          </div>
+          <div class="right">
+            <div>Subtotal: <b id="subtotal">$0</b></div>
+            <div>Discount: <b id="discountAmt">$0</b></div>
+            <div class="total">Total: <span id="total">$0</span></div>
+          </div>
         </div>
-      </div>
-      <div class="row actions">
-        <small class="muted" id="status"></small>
-        <button id="btnSave">Save & Send to Discord</button>
-      </div>
-    </section>
-</div>
-    <!-- History -->
-    <section class="card" style="grid-column: 1 / -1;">
+        <div class="row actions">
+          <small class="muted" id="status"></small>
+          <button id="btnSave">Save & Send to Discord</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===== HISTORY VIEW (visible on #history) ===== -->
+    <section id="viewHistory" data-view="history" class="card hidden" style="grid-column: 1 / -1;">
       <div class="row topbar">
         <div><b>Sales History</b> <span class="muted">Last N hours</span></div>
         <div class="row">
@@ -68,8 +70,10 @@
             <option value="12">Last 12h</option>
             <option value="24" selected>Last 24h (Today)</option>
             <option value="48">Last 48h</option>
+            <option value="168">Last 7 days</option>
           </select>
           <button id="btnHistRefresh" class="ghost">Refresh</button>
+          <button id="btnBackBilling" class="ghost">⬅ Back</button>
         </div>
       </div>
 
@@ -80,29 +84,6 @@
 
       <div id="history" class="list"></div>
     </section>
-
-   <!-- history view section --> 
-    <section id="viewHistory" data-view="history" class="card hidden" style="grid-column: 1 / -1;">
-  <div class="row topbar">
-    <div><b>Sales History</b> <span class="muted">Last N hours</span></div>
-    <div class="row">
-      <select id="histRange">
-        <option value="6">Last 6h</option>
-        <option value="12">Last 12h</option>
-        <option value="24" selected>Last 24h (Today)</option>
-        <option value="48">Last 48h</option>
-        <option value="168">Last 7 days</option>
-      </select>
-      <button id="btnHistRefresh" class="ghost">Refresh</button>
-      <button id="btnBackBilling" class="ghost">⬅ Back</button>
-    </div>
-  </div>
-  <div class="row" style="justify-content:space-between; align-items:center;">
-    <div class="muted" id="histSummary">—</div>
-    <div class="muted" id="histStatus"></div>
-  </div>
-  <div id="history" class="list"></div>
-  </section>
   </main>
 
   <!-- JS: module with Firebase + app logic -->
