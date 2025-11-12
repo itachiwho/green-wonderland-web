@@ -1,0 +1,189 @@
+/* 🌿 Green Wonderland Billing — Stylesheet */
+
+:root {
+  --bg: #0b0f0f;
+  --card: #0f1414;
+  --line: #1c2828;
+  --text: #e7ffee;
+  --muted: #98b3ad;
+  --accent: #00d084;
+  --warn: #ff5c5c;
+}
+
+/* ---- base layout ---- */
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ---- header ---- */
+header {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+
+.brand {
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.pill {
+  padding: 4px 8px;
+  border: 1px solid #0a4;
+  background: #072;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+/* ---- main grid ---- */
+main {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 14px;
+  padding: 14px;
+}
+
+@media (max-width: 880px) {
+  main {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- reusable ---- */
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+input,
+select {
+  background: #071010;
+  color: var(--text);
+  border: 1px solid #244;
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+button {
+  background: var(--accent);
+  color: #00281c;
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button.ghost {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+button.danger {
+  background: var(--warn);
+  color: white;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ---- catalog + cart ---- */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.line {
+  border-top: 1px solid var(--line);
+  margin: 10px 0;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.list {
+  max-height: 60vh;
+  overflow: auto;
+}
+
+.qty {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.qty input {
+  width: 64px;
+  text-align: right;
+}
+
+.right {
+  text-align: right;
+}
+
+.total {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.hidden {
+  display: none;
+}
+
+.tag {
+  font-size: 11px;
+  border: 1px solid #2a3;
+  color: #9fe6c9;
+  border-radius: 999px;
+  padding: 2px 6px;
+  margin-left: 6px;
+}
+
+/* ---- extra tweaks ---- */
+.topbar {
+  justify-content: space-between;
+  align-items: center;
+}
+
+.discountInput {
+  width: 90px;
+  text-align: right;
+}
+
+.actions {
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+#status {
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+
+.totals {
+  justify-content: space-between;
+  align-items: center;
+}
