@@ -55,6 +55,29 @@
         <button id="btnSave">Save & Send to Discord</button>
       </div>
     </section>
+
+    <!-- History -->
+    <section class="card" style="grid-column: 1 / -1;">
+      <div class="row topbar">
+        <div><b>Sales History</b> <span class="muted">Last N hours</span></div>
+        <div class="row">
+          <select id="histRange">
+            <option value="6">Last 6h</option>
+            <option value="12">Last 12h</option>
+            <option value="24" selected>Last 24h (Today)</option>
+            <option value="48">Last 48h</option>
+          </select>
+          <button id="btnHistRefresh" class="ghost">Refresh</button>
+        </div>
+      </div>
+
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <div class="muted" id="histSummary">—</div>
+        <div class="muted" id="histStatus"></div>
+      </div>
+
+      <div id="history" class="list"></div>
+    </section>
   </main>
 
   <!-- JS: module with Firebase + app logic -->
