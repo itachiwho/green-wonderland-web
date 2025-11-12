@@ -16,7 +16,7 @@ import {
   getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import {
-  getFirestore, collection, getDocs
+  getFirestore, collection, getDocs, addDoc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 // Init
@@ -349,9 +349,26 @@ $("btnSave").onclick = async () => {
     if (!res.ok || !data.ok) {
       throw new Error(data?.error ? `${data.error}: ${data?.details || ""}` : `HTTP ${res.status}`);
     }
-    setStatus("✅ Saved & posted to Discord.");
-    // Clear everything after success
-    clearAllUI();
+setStatus("✅ Saved & posted to Discord.");
+
+// 🔹 NEW: Save the sale record to Firestore (for history)
+try {
+  await addDoc(collection(db, "sales"), {
+    sellerUid: state.user.uid,
+    sellerName: state.displayName || state.user.email,
+    subtotal,
+    discount: discountPct,
+    total,
+    ts: serverTimestamp(),       // server-side timestamp (accurate)
+    lineItems                    // full list of sold items
+  });
+} catch (e) {
+  console.warn("Failed to log sale:", e);
+  setStatus("✅ Posted to Discord. (Note: failed to log history, will retry next time)");
+}
+
+// finally clear everything
+clearAllUI();
   } catch (e) {
     setStatus("❌ Failed to save: " + (e?.message || e), true);
   } finally {
