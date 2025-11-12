@@ -16,7 +16,7 @@ import {
   getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import {
-  getFirestore, collection, getDocs, addDoc, serverTimestamp
+  getFirestore, collection, getDocs, addDoc, serverTimestamp, query, where, orderBy, limit
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 // Init
@@ -29,6 +29,27 @@ const $ = (id) => document.getElementById(id);
 const money = (n) => { try { return "$" + Number(n).toLocaleString(); } catch { return "$" + n; } };
 const escapeHtml = (s) => (s || "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#39;'}[c]));
 const setStatus = (msg, isErr = false) => { const el=$("status"); el.textContent = msg; el.style.color = isErr ? "var(--warn)" : "var(--muted)"; };
+// History helpers
+const setHistStatus = (msg)=> { const el=document.getElementById("histStatus"); if (el) el.textContent = msg || ""; };
+const setHistSummary = (msg)=> { const el=document.getElementById("histSummary"); if (el) el.textContent = msg || ""; };
+
+// Format like "DD-MM-YYYY | h:mm AM" in Dhaka (client-side view)
+function formatDhakaLocal(dateLike) {
+  const tz = "Asia/Dhaka";
+  const d = dateLike instanceof Date ? dateLike : new Date(dateLike);
+
+  const dGB = new Intl.DateTimeFormat("en-GB", {
+    timeZone: tz, day: "2-digit", month: "2-digit", year: "numeric"
+  }).format(d); // "DD/MM/YYYY"
+  const [dd, mm, yyyy] = dGB.split("/");
+  const datePart = `${dd}-${mm}-${yyyy}`;
+
+  const timePart = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz, hour: "numeric", minute: "2-digit", hour12: true
+  }).format(d);
+
+  return `${datePart} | ${timePart}`;
+}
 
 // App state
 const state = {
@@ -100,13 +121,25 @@ onAuthStateChanged(auth, async (user) => {
     tag.classList.remove("hidden");
     tag.textContent = state.displayName;
     await loadCatalogOnce();
+    await loadHistory();
   } else {
     $("authState").textContent = "Not signed in";
     state.displayName = null;
     tag.classList.add("hidden");
     // clear UI when signed out
     clearAllUI();
+    const listHist = document.getElementById("history");
+    if (listHist) listHist.innerHTML = `<div class="muted">Sign in to view.</div>`;
+    setHistSummary("");
+    setHistStatus("");
   }
+  // History UI events
+const histRangeSel = document.getElementById("histRange");
+const btnHistRefresh = document.getElementById("btnHistRefresh");
+if (histRangeSel && btnHistRefresh) {
+  btnHistRefresh.onclick = () => loadHistory();
+  histRangeSel.onchange = () => loadHistory();
+}
 });
 
 // -------- CATALOG ----------
@@ -376,6 +409,86 @@ clearAllUI();
     $("btnSave").disabled = false;
   }
 };
+
+// history loader + renderer
+async function loadHistory() {
+  setHistStatus("Loading…");
+  setHistSummary("");
+  const list = document.getElementById("history");
+  if (!state.user) { if (list) list.innerHTML = `<div class="muted">Sign in to view.</div>`; setHistStatus(""); return; }
+
+  // Compute start time from range (hours)
+  const hrs = Number((document.getElementById("histRange")?.value) || 24);
+  const start = new Date(Date.now() - hrs * 60 * 60 * 1000);
+
+  try {
+    // Query your own sales in the last N hours, newest first
+    // NOTE: Firestore may ask for an index (console will show a link). Click it once; done forever.
+    const qy = query(
+      collection(db, "sales"),
+      where("sellerUid", "==", state.user.uid),
+      where("ts", ">=", start),
+      orderBy("ts", "desc"),
+      limit(100)
+    );
+
+    const snap = await getDocs(qy);
+    const rows = [];
+    let totalSum = 0;
+
+    snap.forEach(docSnap => {
+      const d = docSnap.data();
+      const when = d.ts?.toDate ? d.ts.toDate() : new Date(); // serverTimestamp becomes Timestamp
+      totalSum += Number(d.total || 0);
+
+      rows.push({
+        id: docSnap.id,
+        when,
+        total: Number(d.total || 0),
+        subtotal: Number(d.subtotal || 0),
+        discount: Number(d.discount || 0),
+        seller: d.sellerName || "(unknown)",
+        lineItems: Array.isArray(d.lineItems) ? d.lineItems : []
+      });
+    });
+
+    renderHistory(rows, totalSum, hrs);
+    setHistStatus("");
+  } catch (e) {
+    console.error(e);
+    setHistStatus("Failed to load history.");
+  }
+}
+
+function renderHistory(rows, totalSum, hrs) {
+  const list = document.getElementById("history");
+  if (!list) return;
+  if (!rows.length) {
+    list.innerHTML = `<div class="muted">No sales found in the last ${hrs} hours.</div>`;
+    setHistSummary(`0 sales | Total $0`);
+    return;
+  }
+
+  // Summary
+  setHistSummary(`${rows.length} sale${rows.length>1?'s':''} | Total ${money(totalSum)}`);
+
+  // Rows
+  list.innerHTML = "";
+  rows.forEach(r => {
+    const li = document.createElement("div");
+    li.className = "history-row";
+
+    const itemsText = r.lineItems.map(li => `${li.nameSnap || li.itemId} ×${li.qty}`).join(", ");
+    li.innerHTML = `
+      <div class="history-left">
+        <div class="history-title">${escapeHtml(r.seller)} — ${escapeHtml(itemsText)}</div>
+        <div class="history-meta">${formatDhakaLocal(r.when)}</div>
+      </div>
+      <div class="right history-total">${money(r.total)}</div>
+    `;
+    list.appendChild(li);
+  });
+}
 
 // ---- Keyboard QoL: Enter triggers Save when logged in ----
 document.addEventListener("keydown", (e) => {
