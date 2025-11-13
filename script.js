@@ -150,7 +150,10 @@ onAuthStateChanged(auth, async (user) => {
 async function initAdminAndSellers() {
   state.isAdmin = false;
   const sellerSel = $("histSeller");
-  if (sellerSel) { sellerSel.classList.add("hidden"); sellerSel.innerHTML = `<option value="me" selected>My sales</option><option value="all">All sellers (admin)</option>`; }
+  if (sellerSel) {
+    sellerSel.classList.add("hidden");
+    sellerSel.innerHTML = `<option value="me" selected>My sales</option><option value="all">All sellers (admin)</option>`;
+  }
 
   try {
     // Check my role
@@ -207,7 +210,8 @@ function renderFilters() {
   const cats = Array.from(new Set(state.items.map(i => i.category))).sort();
   const sel = $("filterCat");
   if (!sel) return;
-  sel.innerHTML = '<option value="">All Categories</option>' + cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+  sel.innerHTML = '<option value="">All Categories</option>' +
+    cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
   sel.onchange = renderCatalog;
   const search = $("search");
   if (search) search.oninput = renderCatalog;
@@ -216,50 +220,103 @@ function renderFilters() {
 function renderCatalog() {
   const searchEl = $("search");
   const q = (searchEl?.value || "").toLowerCase().trim();
-  const cat = $("filterCat")?.value || "";
+  const catFilter = $("filterCat")?.value || "";
   const list = $("catalog");
   if (!list) return;
 
   list.innerHTML = "";
 
-  // QoL: pin popular items (quick-add row)
+  // QoL: pin popular items (quick-add row), full-width in the grid
   const quick = pickQuickItems(["geek-bar-basic","geek-bar-flavour","penjamin","joint-wild-haze-1x"]);
   if (quick.length) {
     const bar = document.createElement("div");
     bar.className = "row";
     bar.style.margin = "0 0 8px 0";
-    bar.innerHTML = `<span class="muted">Quick add:</span>` + quick.map(it => {
-      return `<button class="ghost" data-quick="${it.id}">+ ${escapeHtml(it.name)} (${money(it.unitPrice)})</button>`;
-    }).join(" ");
+    bar.style.gridColumn = "1 / -1"; // make it span full width of the grid
+    bar.innerHTML =
+      `<span class="muted">Quick add:</span>` +
+      quick.map(it => {
+        return `<button class="ghost" data-quick="${it.id}">+ ${escapeHtml(it.name)} (${money(it.unitPrice)})</button>`;
+      }).join(" ");
     list.appendChild(bar);
     bar.querySelectorAll("[data-quick]").forEach(b => b.onclick = () => addToCart(b.dataset.quick));
   }
 
+  // Filter items by search & category
   const filtered = state.items.filter(it => {
-    const byCat = !cat || it.category === cat;
+    const byCat = !catFilter || it.category === catFilter;
     const hay = (it.name + " " + (it.aliases || []).join(" ")).toLowerCase();
     const bySearch = !q || hay.includes(q);
     return byCat && bySearch;
   });
 
   if (!filtered.length) {
-    list.innerHTML += `<div class="muted">No items match.</div>`;
+    const empty = document.createElement("div");
+    empty.className = "muted";
+    empty.style.gridColumn = "1 / -1";
+    empty.textContent = "No items match.";
+    list.appendChild(empty);
     return;
   }
 
+  // Group by category
+  const groups = new Map();
   filtered.forEach(it => {
-    const row = document.createElement("div");
-    row.className = "grid";
-    row.innerHTML = `
-      <div>${escapeHtml(it.name)} <span class="muted">(${escapeHtml(it.category||"")})</span></div>
-      <div class="right">${money(it.unitPrice||0)}</div>
-      <div class="right">
-        <button data-id="${it.id}" class="addBtn">+</button>
-      </div>
-    `;
-    list.appendChild(row);
+    const cat = it.category || "Other";
+    if (!groups.has(cat)) groups.set(cat, []);
+    groups.get(cat).push(it);
   });
-  list.querySelectorAll(".addBtn").forEach(btn => btn.onclick = () => addToCart(btn.dataset.id));
+
+  // Order: known categories first, then others alphabetically
+  const knownOrder = ["Geek Bar","Refill","Exclusive","Bong","Joint 1x","Joint 5x"];
+  const allCats = Array.from(groups.keys());
+  const orderedCats = [];
+
+  knownOrder.forEach(name => {
+    if (allCats.includes(name)) {
+      orderedCats.push(name);
+    }
+  });
+
+  const remaining = allCats.filter(c => !knownOrder.includes(c)).sort();
+  remaining.forEach(c => orderedCats.push(c));
+
+  // Render each category as a card
+  orderedCats.forEach(catName => {
+    const items = groups.get(catName) || [];
+    const card = document.createElement("div");
+    card.className = "cat-card";
+
+    card.innerHTML = `
+      <div class="cat-header">
+        <div class="cat-title">${escapeHtml(catName)}</div>
+        <div class="cat-sub">${items.length} item${items.length > 1 ? "s" : ""}</div>
+      </div>
+      <div class="cat-items"></div>
+    `;
+
+    const itemsContainer = card.querySelector(".cat-items");
+
+    items.forEach(it => {
+      const row = document.createElement("div");
+      row.className = "item-row";
+      row.innerHTML = `
+        <div class="item-main">
+          <div class="item-name">${escapeHtml(it.name)}</div>
+          <div class="item-price">${money(it.unitPrice || 0)}</div>
+          <button class="item-add" data-id="${it.id}">+</button>
+        </div>
+      `;
+      itemsContainer.appendChild(row);
+    });
+
+    list.appendChild(card);
+  });
+
+  // Attach add-to-cart handlers for all item + buttons
+  list.querySelectorAll(".item-add").forEach(btn => {
+    btn.onclick = () => addToCart(btn.dataset.id);
+  });
 }
 
 function pickQuickItems(ids) {
@@ -291,7 +348,10 @@ function renderBundles() {
   const wrap = document.createElement("div");
   wrap.className = "row";
   wrap.style.margin = "8px 0 10px 0";
-  wrap.innerHTML = `<span class="muted">Bundles:</span> ` + BUNDLES.map(b => `<button class="ghost bundleBtn" data-b="${escapeHtml(b.name)}">${escapeHtml(b.name)}</button>`).join(" ");
+  wrap.style.gridColumn = "1 / -1"; // span full width in the grid
+  wrap.innerHTML =
+    `<span class="muted">Bundles:</span> ` +
+    BUNDLES.map(b => `<button class="ghost bundleBtn" data-b="${escapeHtml(b.name)}">${escapeHtml(b.name)}</button>`).join(" ");
   list.prepend(wrap);
   list.querySelectorAll(".bundleBtn").forEach(btn => {
     btn.onclick = () => {
@@ -316,7 +376,11 @@ function renderCart() {
   const c = $("cart");
   if (!c) return;
   const entries = Object.values(state.cart);
-  if (!entries.length) { c.innerHTML = `<div class="muted">Cart is empty.</div>`; calcTotals(); return; }
+  if (!entries.length) {
+    c.innerHTML = `<div class="muted">Cart is empty.</div>`;
+    calcTotals();
+    return;
+  }
   c.innerHTML = "";
   entries.forEach(line => {
     const row = document.createElement("div");
@@ -533,12 +597,22 @@ function renderHistory(rows, totalSum, hrs, mode) {
   if (!list) return;
   if (!rows.length) {
     list.innerHTML = `<div class="muted">No sales found in the last ${hrs} hours.</div>`;
-    setHistSummary(`0 sales | Total $0${state.isAdmin ? (mode==='all' ? " | View: All" : mode==='me' ? " | View: Me" : " | View: Seller") : ""}`);
+    setHistSummary(
+      `0 sales | Total $0${
+        state.isAdmin
+          ? (mode==='all' ? " | View: All" : mode==='me' ? " | View: Me" : " | View: Seller")
+          : ""
+      }`
+    );
     return;
   }
 
   const viewLabel = state.isAdmin ? (mode==='all' ? "All" : mode==='me' ? "Me" : "Seller") : "Me";
-  setHistSummary(`${rows.length} sale${rows.length>1?'s':''} | Total ${money(totalSum)}${state.isAdmin ? ` | View: ${viewLabel}` : ""}`);
+  setHistSummary(
+    `${rows.length} sale${rows.length>1?'s':''} | Total ${money(totalSum)}${
+      state.isAdmin ? ` | View: ${viewLabel}` : ""
+    }`
+  );
 
   list.innerHTML = "";
   rows.forEach(r => {
