@@ -200,7 +200,6 @@ async function loadCatalogOnce() {
     catalogLoaded = true;
     renderFilters();
     renderCatalog();
-    renderBundles(); // QoL: quick bundles
   } catch (e) {
     setStatus("Failed to load catalog: " + (e?.message || e), true);
   }
@@ -225,22 +224,6 @@ function renderCatalog() {
   if (!list) return;
 
   list.innerHTML = "";
-
-  // QoL: pin popular items (quick-add row), full-width in the grid
-  const quick = pickQuickItems(["geek-bar-basic","geek-bar-flavour","penjamin","joint-wild-haze-1x"]);
-  if (quick.length) {
-    const bar = document.createElement("div");
-    bar.className = "row";
-    bar.style.margin = "0 0 8px 0";
-    bar.style.gridColumn = "1 / -1"; // make it span full width of the grid
-    bar.innerHTML =
-      `<span class="muted">Quick add:</span>` +
-      quick.map(it => {
-        return `<button class="ghost" data-quick="${it.id}">+ ${escapeHtml(it.name)} (${money(it.unitPrice)})</button>`;
-      }).join(" ");
-    list.appendChild(bar);
-    bar.querySelectorAll("[data-quick]").forEach(b => b.onclick = () => addToCart(b.dataset.quick));
-  }
 
   // Filter items by search & category
   const filtered = state.items.filter(it => {
@@ -326,40 +309,6 @@ function pickQuickItems(ids) {
     if (it) found.push(it);
   });
   return found;
-}
-
-// -------- BUNDLES (QoL) --------
-const BUNDLES = [
-  { name: "Starter Pack", items: [
-      { id: "geek-bar-basic", qty: 1 },
-      { id: "joint-wild-haze-1x", qty: 1 },
-      { id: "penjamin", qty: 1 }
-  ]},
-  { name: "Party Combo", items: [
-      { id: "geek-bar-flavour", qty: 2 },
-      { id: "joint-og-kush-1x", qty: 2 },
-      { id: "brownie-1x", qty: 2 }
-  ]}
-];
-
-function renderBundles() {
-  const list = $("catalog");
-  if (!list || !BUNDLES.length) return;
-  const wrap = document.createElement("div");
-  wrap.className = "row";
-  wrap.style.margin = "8px 0 10px 0";
-  wrap.style.gridColumn = "1 / -1"; // span full width in the grid
-  wrap.innerHTML =
-    `<span class="muted">Bundles:</span> ` +
-    BUNDLES.map(b => `<button class="ghost bundleBtn" data-b="${escapeHtml(b.name)}">${escapeHtml(b.name)}</button>`).join(" ");
-  list.prepend(wrap);
-  list.querySelectorAll(".bundleBtn").forEach(btn => {
-    btn.onclick = () => {
-      const b = BUNDLES.find(x => x.name === btn.dataset.b);
-      if (!b) return;
-      b.items.forEach(x => { for (let i=0;i<x.qty;i++) addToCart(x.id); });
-    };
-  });
 }
 
 // -------- CART ----------
