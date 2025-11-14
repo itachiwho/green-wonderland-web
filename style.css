@@ -93,6 +93,13 @@ header {
   gap: 6px;
 }
 
+.brand-logo {
+  height: 32px;      /* make bigger or smaller */
+  width: auto;
+  border-radius: 6px; /* remove don’t want rounded corners */
+  object-fit: contain;
+}
+
 .brand span {
   opacity: 0.9;
 }
