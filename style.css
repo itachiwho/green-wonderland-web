@@ -41,14 +41,24 @@ body {
   flex-direction: column;
 }
 
+/* MAIN container: full width, page scrolling */
 main {
-  max-width: 1200px;
   width: 100%;
-  margin: 16px auto 32px auto;
-  padding: 0 12px 32px;
+  margin: 16px 0 32px 0;
+  padding: 0 16px 32px;
+}
+
+/* BILLING view: side-by-side Catalog (70%) + Cart (30%) */
+#viewBilling {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 7fr) minmax(0, 3fr); /* 70% / 30% */
   gap: 16px;
+  align-items: stretch; /* equal height cards */
+}
+
+/* HISTORY view: single card spanning full width */
+#viewHistory {
+  margin-top: 8px;
 }
 
 /* Generic Layout Helpers */
@@ -90,18 +100,15 @@ header {
   font-size: 1.1rem;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
 }
 
+/* Header logo */
 .brand-logo {
-  height: 32px;      /* make bigger or smaller */
+  height: 32px;      /* adjust if you want bigger/smaller */
   width: auto;
-  border-radius: 6px; /* remove don’t want rounded corners */
+  border-radius: 6px;
   object-fit: contain;
-}
-
-.brand span {
-  opacity: 0.9;
 }
 
 header .row {
@@ -217,6 +224,7 @@ button:disabled {
   box-shadow: 0 14px 25px rgba(0, 0, 0, 0.75);
   padding: 14px 14px 14px;
   position: relative;
+  height: 100%; /* important for equal height in grid */
 }
 
 /* subtle glowing border accent */
@@ -263,7 +271,7 @@ button:disabled {
    ================================ */
 
 .catalog-card {
-  margin-bottom: 10px;
+  margin-bottom: 0;
 }
 
 .catalog-card .topbar input,
@@ -387,7 +395,7 @@ button:disabled {
   font-weight: 500;
 }
 
-/* Small alias / descriptor line */
+/* Small alias / descriptor line (if ever needed) */
 
 .item-meta {
   margin-top: 2px;
@@ -426,14 +434,12 @@ button:disabled {
   transform: scale(0.94);
 }
 
-/* “Quick add” / “Bundles” rows inside catalog if any use .row + .muted already */
-
 /* ================================
    Cart
    ================================ */
 
 .cart-card {
-  margin-top: 6px;
+  margin-top: 0;
 }
 
 /* Seller name pill */
@@ -448,7 +454,7 @@ button:disabled {
   color: var(--accent);
 }
 
-/* Cart items layout (JS uses .grid, .qty, .qtyInput) */
+/* Cart items layout */
 
 #cart {
   margin-top: 4px;
@@ -545,7 +551,7 @@ button:disabled {
   margin-top: 4px;
 }
 
-/* History filters row already styled via .row, .ghost, selects */
+/* History filters row */
 
 #histRange,
 #histSeller {
@@ -610,6 +616,17 @@ button:disabled {
    Responsive
    ================================ */
 
+@media (max-width: 900px) {
+  /* stack catalog + cart on smaller screens */
+  #viewBilling {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  main {
+    padding: 0 10px 24px;
+  }
+}
+
 @media (max-width: 768px) {
   header {
     flex-direction: column;
@@ -621,10 +638,6 @@ button:disabled {
     width: 100%;
     justify-content: flex-start;
     flex-wrap: wrap;
-  }
-
-  main {
-    margin-top: 10px;
   }
 
   .grid {
