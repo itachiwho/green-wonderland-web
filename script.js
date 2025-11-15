@@ -117,25 +117,51 @@ $("btnLogout")?.addEventListener("click", async () => {
 
 onAuthStateChanged(auth, async (user) => {
   state.user = user || null;
-  if ($("btnLogout")) $("btnLogout").disabled = !user;
-  if ($("btnLogin")) $("btnLogin").disabled = !!user;
-  if ($("email")) $("email").disabled = !!user;
-  if ($("password")) $("password").disabled = !!user;
 
   const tag = $("sellerNameTag");
+  const logoutBtn = $("btnLogout");
+
   if (user) {
-    if ($("authState")) $("authState").textContent = `Signed in: ${user.email}`;
+    // 🔹 Hide login UI once signed in
+    ["authState", "email", "password", "btnLogin"].forEach(id => {
+      const el = $(id);
+      if (el) {
+        el.classList.add("hidden");
+        if (id === "email" || id === "password") el.disabled = true;
+      }
+    });
+
+    if (logoutBtn) {
+      logoutBtn.disabled = false;
+      logoutBtn.classList.remove("hidden");
+    }
 
     await loadCatalogOnce();
-    // Detect admin + set displayName + populate seller list if admin
-    await initAdminAndSellers();
+    await initAdminAndSellers(); // this sets state.displayName and sellerNameTag
 
     // If user is already on #history, load it; otherwise skip until they navigate
     if ((location.hash || "").toLowerCase() === "#history") {
       await loadHistory();
     }
   } else {
+    // 🔹 Show login UI again when signed out
+    ["authState", "email", "password", "btnLogin"].forEach(id => {
+      const el = $(id);
+      if (el) {
+        el.classList.remove("hidden");
+        if (id === "email" || id === "password") {
+          el.disabled = false;
+          el.value = "";
+        }
+      }
+    });
+
     if ($("authState")) $("authState").textContent = "Not signed in";
+
+    if (logoutBtn) {
+      logoutBtn.disabled = true;
+    }
+
     state.displayName = null;
     tag?.classList.add("hidden");
 
