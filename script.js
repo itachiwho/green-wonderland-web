@@ -13,7 +13,7 @@ const firebaseConfig = {
 // Firebase SDK (CDN, no build step)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import {
-  getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile
+  getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import {
   getFirestore, collection, getDocs, addDoc, serverTimestamp,
@@ -28,11 +28,25 @@ const db = getFirestore(app);
 // Helpers
 const $ = (id) => document.getElementById(id);
 const money = (n) => { try { return "$" + Number(n).toLocaleString(); } catch { return "$" + n; } };
-const escapeHtml = (s) => (s || "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#39;'}[c]));
-const setStatus = (msg, isErr = false) => { const el=$("status"); if (!el) return; el.textContent = msg; el.style.color = isErr ? "var(--warn)" : "var(--muted)"; };
+const escapeHtml = (s) =>
+  (s || "").replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#39;'
+  }[c]));
+const setStatus = (msg, isErr = false) => {
+  const el = $("status");
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = isErr ? "var(--warn)" : "var(--muted)";
+};
 // History helpers
-const setHistStatus = (msg)=> { const el=$("histStatus"); if (el) el.textContent = msg || ""; };
-const setHistSummary = (msg)=> { const el=$("histSummary"); if (el) el.textContent = msg || ""; };
+const setHistStatus = (msg)=> {
+  const el = $("histStatus");
+  if (el) el.textContent = msg || "";
+};
+const setHistSummary = (msg)=> {
+  const el = $("histSummary");
+  if (el) el.textContent = msg || "";
+};
 
 // Format like "DD-MM-YYYY | h:mm AM" in Dhaka (client-side view)
 function formatDhakaLocal(dateLike) {
@@ -90,10 +104,7 @@ $("btnLogin")?.addEventListener("click", async () => {
   try {
     const cred = await signInWithEmailAndPassword(auth, email, password);
     state.user = cred.user;
-    if (!state.user.displayName) {
-      const rp = prompt("Enter your RP seller name (shown on Discord):", "");
-      if (rp && rp.length >= 2) await updateProfile(state.user, { displayName: rp });
-    }
+    // No more prompt – displayName will come from Firestore in initAdminAndSellers()
     setStatus("Signed in.");
   } catch (e) {
     setStatus("Sign-in failed: " + (e?.message || e), true);
@@ -114,13 +125,9 @@ onAuthStateChanged(auth, async (user) => {
   const tag = $("sellerNameTag");
   if (user) {
     if ($("authState")) $("authState").textContent = `Signed in: ${user.email}`;
-    state.displayName = user.displayName || "(no name)";
-    tag?.classList.remove("hidden");
-    if (tag) tag.textContent = state.displayName;
 
     await loadCatalogOnce();
-
-    // Detect admin + populate seller list if admin
+    // Detect admin + set displayName + populate seller list if admin
     await initAdminAndSellers();
 
     // If user is already on #history, load it; otherwise skip until they navigate
@@ -152,16 +159,33 @@ async function initAdminAndSellers() {
   const sellerSel = $("histSeller");
   if (sellerSel) {
     sellerSel.classList.add("hidden");
-    sellerSel.innerHTML = `<option value="me" selected>My sales</option><option value="all">All sellers (admin)</option>`;
+    sellerSel.innerHTML =
+      `<option value="me" selected>My sales</option><option value="all">All sellers (admin)</option>`;
   }
 
+  if (!state.user) return;
+
   try {
-    // Check my role
+    // Check my doc in /users/{uid}
     const meDoc = await getDoc(doc(db, "users", state.user.uid));
-    const role = meDoc.exists() ? meDoc.data()?.role : null;
+    const meData = meDoc.exists() ? meDoc.data() : {};
+    const role = meData.role || null;
     state.isAdmin = (role === "admin");
 
-    if (!state.isAdmin) return; // nothing else to do
+    // 🔹 NEW: set displayName priority: Firestore > Auth > email > "(no name)"
+    const nameFromFirestore = meData.displayName;
+    const nameFromAuth = state.user.displayName;
+    const fallback = state.user.email;
+    state.displayName = nameFromFirestore || nameFromAuth || fallback || "(no name)";
+
+    // Update the seller name tag in the Cart header
+    const tag = $("sellerNameTag");
+    if (tag) {
+      tag.classList.remove("hidden");
+      tag.textContent = state.displayName;
+    }
+
+    if (!state.isAdmin) return; // nothing else to do for non-admins
 
     // Load sellers list for admins
     const snap = await getDocs(collection(db, "users"));
@@ -196,7 +220,10 @@ async function loadCatalogOnce() {
     const snap = await getDocs(collection(db, "items"));
     state.items = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       .filter(x => x.isActive)
-      .sort((a,b)=> (a.category||"").localeCompare(b.category||"") || (a.name||"").localeCompare(b.name||""));
+      .sort((a,b)=>
+        (a.category||"").localeCompare(b.category||"") ||
+        (a.name||"").localeCompare(b.name||"")
+      );
     catalogLoaded = true;
     renderFilters();
     renderCatalog();
@@ -300,15 +327,6 @@ function renderCatalog() {
   list.querySelectorAll(".item-add").forEach(btn => {
     btn.onclick = () => addToCart(btn.dataset.id);
   });
-}
-
-function pickQuickItems(ids) {
-  const found = [];
-  ids.forEach(id => {
-    const it = state.items.find(x => x.id === id);
-    if (it) found.push(it);
-  });
-  return found;
 }
 
 // -------- CART ----------
