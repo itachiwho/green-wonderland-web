@@ -174,14 +174,7 @@ onAuthStateChanged(auth, async (user) => {
   if (user) {
     // ---- NEW LOGIN PAGE MODE ----
     updateShellVisibility(true);
-  } else {
-    updateShellVisibility(false);
-    // ... rest of your logged-out logic ...
-  }
-
-    // 🔚 Auth has resolved, show the correct screen
-  document.body.classList.remove("auth-pending");
-  });
+    
     // If old header login exists, hide the auth inputs/pill
     ["authState", "email", "password", "btnLogin"].forEach(id => {
       const el = $(id);
