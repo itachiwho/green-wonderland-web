@@ -1,3 +1,6 @@
+/* Google font just for login screen */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
 /* ================================
    Green Wonderland - Global Theme
    ================================ */
@@ -76,6 +79,248 @@ main {
 
 .hidden {
   display: none !important;
+}
+
+/* ================================
+   LOGIN SCREEN
+   ================================ */
+
+.login-screen {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+.login-inner {
+  max-width: 480px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-items: stretch;
+}
+
+/* login header: logo + text */
+.login-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  color: var(--text);
+}
+
+.login-header .brand-logo {
+  height: 40px;
+  width: auto;
+  border-radius: 8px;
+}
+
+.login-title-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.login-app-name {
+  font-family: "Poppins", system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+}
+
+.login-subtitle {
+  font-family: "Poppins", system-ui, sans-serif;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+/* Scope Poppins mainly to login box content */
+#viewLogin * {
+  font-family: "Poppins", system-ui, sans-serif;
+}
+
+/* Animated box from your template */
+
+.box {
+  position: relative;
+  width: 380px;
+  max-width: 100%;
+  height: 450px;
+  background: #1c1c1c;
+  border-radius: 8px;
+  overflow: hidden;
+  padding: 10px;
+  margin: 0 auto;
+}
+
+.box::before{
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 380px;
+  height: 420px;
+  background: linear-gradient(0deg, transparent, transparent, #3da80c, #3da80c, #3da80c);
+  z-index: 1;
+  transform-origin: bottom right;
+  animation: animate 6s linear infinite;
+}
+
+.box::after{
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 380px;
+  height: 420px;
+  background: linear-gradient(0deg, transparent, transparent, #3da80c, #3da80c, #3da80c);
+  z-index: 1;
+  transform-origin: bottom right;
+  animation: animate 6s linear infinite;
+  animation-delay: -3s;
+}
+
+.borderLine::before{
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 380px;
+  height: 420px;
+  background: linear-gradient(0deg, transparent, transparent, #3da80c, #3da80c, #3da80c);
+  z-index: 1;
+  transform-origin: bottom right;
+  animation: animate 6s linear infinite;
+  animation-delay: -1.5s;
+}
+
+.borderLine::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 380px;
+  height: 420px;
+  background: linear-gradient(0deg, transparent, transparent, #3da80c, #3da80c, #3da80c);
+  z-index: 1;
+  transform-origin: bottom right;
+  animation: animate 6s linear infinite;
+  animation-delay: -4.5s;
+}
+
+@keyframes animate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.box form {
+  position: absolute;
+  inset: 4px;
+  background: #222;
+  padding: 50px 40px;
+  border-radius: 8px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+}
+
+.box form h2 {
+  color: #fff;
+  font-weight: 500;
+  text-align: center;
+  letter-spacing: 0.1em;
+}
+
+.box form .inputBox {
+  position: relative;
+  width: 100%;
+  margin-top: 35px;
+}
+
+.box form .inputBox input {
+  position: relative;
+  width: 100%;
+  padding: 20px 10px 10px;
+  background: transparent;
+  outline: none;
+  border: none;
+  box-shadow: none;
+  color: #e7ffee;
+  font-size: 1em;
+  letter-spacing: 0.05em;
+  transition: 0.5s;
+  z-index: 10;
+}
+
+.box form .inputBox span {
+  position: absolute;
+  left: 0;
+  padding: 20px 0px 10px;
+  pointer-events: none;
+  color: #8f8f8f;
+  font-size: 1em;
+  letter-spacing: 0.05em;
+  transition: 0.5s;
+}
+
+.box form .inputBox input:valid ~ span,
+.box form .inputBox input:focus ~ span {
+  color: #fff;
+  font-size: 0.75em;
+  transform: translateY(-34px);
+}
+
+.box form .inputBox i {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 2px;
+  background: #fff;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: 0.5s;
+  pointer-events: none;
+}
+
+.box form .inputBox input:valid ~ i,
+.box form .inputBox input:focus ~ i {
+  height: 44px;
+}
+
+/* Login button style */
+.box form button#btnLoginMain {
+  margin-top: 20px;
+  align-self: center;
+  border: none;
+  outline: none;
+  padding: 9px 25px;
+  cursor: pointer;
+  font-size: 0.9em;
+  border-radius: 999px;
+  font-weight: 600;
+  width: 100%;
+  max-width: 160px;
+  background: var(--accent);
+  color: #020404;
+  box-shadow: 0 0 16px rgba(0, 208, 132, 0.6);
+  transition:
+    box-shadow 0.15s ease,
+    transform 0.08s ease,
+    background 0.15s ease;
+}
+
+.box form button#btnLoginMain:hover {
+  box-shadow: 0 0 25px rgba(0, 208, 132, 0.9);
+  transform: translateY(-1px) scale(1.02);
+}
+
+.box form button#btnLoginMain:active {
+  transform: scale(0.97);
 }
 
 /* ================================
@@ -165,9 +410,8 @@ button {
   gap: 4px;
 }
 
-/* Primary button */
+/* Primary button (Save) */
 
-button#btnLogin,
 button#btnSave {
   background: var(--accent);
   color: #020404;
@@ -175,13 +419,11 @@ button#btnSave {
   box-shadow: var(--shadow-soft);
 }
 
-button#btnLogin:hover,
 button#btnSave:hover {
   box-shadow: var(--shadow-strong);
   transform: translateY(-1px) scale(1.02);
 }
 
-button#btnLogin:active,
 button#btnSave:active {
   transform: scale(0.98);
 }
@@ -643,6 +885,10 @@ button:disabled {
 
   main {
     padding: 0 10px 24px;
+  }
+
+  .box {
+    height: auto;
   }
 }
 
