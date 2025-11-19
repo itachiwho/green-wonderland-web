@@ -13,161 +13,160 @@
 </head>
 <body>
 
-  <!-- ==============================
-       LOGIN VIEW (shown when logged out)
-       ============================== -->
-  <section id="viewLogin" data-view="login" class="login-screen">
-    <div class="login-inner">
-      <!-- Optional logo/title above the box -->
-      <div class="login-header">
+  <!-- =========================
+       LOGIN VIEW (shown when logged OUT)
+       ========================== -->
+  <div id="viewLogin" class="login-screen">
+    <div class="box">
+      <span class="borderLine"></span>
+      <form>
+        <h2>Sign in</h2>
+
+        <div class="inputBox">
+          <input type="email" id="loginEmail" required />
+          <span>Email</span>
+          <i></i>
+        </div>
+
+        <div class="inputBox">
+          <input type="password" id="loginPassword" required />
+          <span>Password</span>
+          <i></i>
+        </div>
+
+        <!-- links row not needed, but keeping block in case you want later -->
+        <div class="links">
+          <!-- No forgot / signup for now -->
+        </div>
+
+        <input type="submit" id="btnLoginMain" value="Login" />
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================
+       APP SHELL (header + billing UI)
+       Hidden until user is logged in
+       ========================== -->
+  <div id="appShell" class="hidden">
+    <header>
+      <div class="brand">
         <img src="assets/GW.png" class="brand-logo" alt="Green Wonderland Logo">
-        <div class="login-title-text">
-          <div class="login-app-name">Green Wonderland</div>
-          <div class="login-subtitle">Staff Billing Panel</div>
-        </div>
+        Green Wonderland — Billing
       </div>
+      <div class="row">
+        <!-- These will be auto-hidden by script.js after login -->
+        <div id="authState" class="pill">Not signed in</div>
+        <input id="email" placeholder="email" />
+        <input id="password" type="password" placeholder="password" />
+        <button id="btnLogin">Sign In</button>
 
-      <!-- Your animated login box -->
-      <div class="box">
-        <span class="borderLine"></span>
-        <form id="loginForm">
-          <h2>Sign In</h2>
+        <!-- Sign out + history -->
+        <button id="btnLogout" class="ghost" disabled>Sign Out</button>
+        <button id="btnHistory" class="ghost">📜 History</button>
+      </div>
+    </header>
 
-          <div class="inputBox">
-            <input id="loginEmail" type="text" required />
-            <span>Username</span>
-            <i></i>
+    <main>
+      <!-- ===== BILLING VIEW (visible on #billing) ===== -->
+      <div id="viewBilling" data-view="billing">
+        <!-- Catalog -->
+        <section class="card catalog-card">
+          <div class="row topbar">
+            <div>
+              <b>Catalog</b>
+              <span class="muted">click + to add</span>
+            </div>
+            <div class="row">
+              <input id="search" placeholder="Search (name or alias)" />
+              <select id="filterCat">
+                <option value="">All Categories</option>
+              </select>
+            </div>
+          </div>
+          <!-- Category cards will be rendered inside this grid -->
+          <div id="catalog" class="list catalog-grid"></div>
+        </section>
+
+        <!-- Cart -->
+        <section class="card cart-card">
+          <div class="row topbar">
+            <div>
+              <b>Cart</b>
+              <span id="sellerNameTag" class="tag hidden"></span>
+            </div>
+            <button id="btnClear" class="ghost">Clear</button>
           </div>
 
-          <div class="inputBox">
-            <input id="loginPassword" type="password" required />
-            <span>Password</span>
-            <i></i>
+          <div id="cart"></div>
+
+          <div class="line"></div>
+
+          <div class="row totals">
+            <div class="row">
+              <label class="muted">Discount %</label>
+              <input
+                id="discount"
+                type="number"
+                min="0"
+                max="90"
+                step="1"
+                value="0"
+                class="discountInput"
+              />
+            </div>
+            <div class="right">
+              <div>Subtotal: <b id="subtotal">$0</b></div>
+              <div>Discount: <b id="discountAmt">$0</b></div>
+              <div class="total">Total: <span id="total">$0</span></div>
+            </div>
           </div>
 
-          <button type="button" id="btnLoginMain">Login</button>
-        </form>
+          <div class="row actions">
+            <small class="muted" id="status"></small>
+            <button id="btnSave">Save &amp; Send to Discord</button>
+          </div>
+        </section>
       </div>
-    </div>
-  </section>
 
-  <!-- ==============================
-       APP VIEW (header + billing + history)
-       Visible only after login (script.js will toggle)
-       ============================== -->
-
-  <header>
-    <div class="brand">
-      <img src="assets/GW.png" class="brand-logo" alt="Green Wonderland Logo">
-      Green Wonderland — Billing
-    </div>
-    <div class="row">
-      <div id="authState" class="pill">Not signed in</div>
-      <!-- No email/password/Sign In here anymore -->
-      <button id="btnLogout" class="ghost" disabled>Sign Out</button>
-      <button id="btnHistory" class="ghost">📜 History</button>
-    </div>
-  </header>
-
-  <main>
-    <!-- ===== BILLING VIEW (visible on #billing) ===== -->
-    <div id="viewBilling" data-view="billing">
-      <!-- Catalog -->
-      <section class="card catalog-card">
+      <!-- ===== HISTORY VIEW (visible on #history) ===== -->
+      <section
+        id="viewHistory"
+        data-view="history"
+        class="card history-card hidden"
+        style="grid-column: 1 / -1;"
+      >
         <div class="row topbar">
           <div>
-            <b>Catalog</b>
-            <span class="muted">click + to add</span>
+            <b>Sales History</b>
+            <span class="muted">Last N hours</span>
           </div>
           <div class="row">
-            <input id="search" placeholder="Search (name or alias)" />
-            <select id="filterCat">
-              <option value="">All Categories</option>
+            <select id="histSeller" class="hidden">
+              <option value="me" selected>My sales</option>
+              <option value="all">All sellers (admin)</option>
             </select>
+            <select id="histRange">
+              <option value="6">Last 6h</option>
+              <option value="12">Last 12h</option>
+              <option value="24" selected>Last 24h (Today)</option>
+              <option value="48">Last 48h</option>
+              <option value="168">Last 7 days</option>
+            </select>
+            <button id="btnHistRefresh" class="ghost">Refresh</button>
+            <button id="btnBackBilling" class="ghost">⬅ Back</button>
           </div>
         </div>
-        <!-- Category cards will be rendered inside this grid -->
-        <div id="catalog" class="list catalog-grid"></div>
+
+        <div class="row" style="justify-content:space-between; align-items:center;">
+          <div class="muted" id="histSummary">—</div>
+          <div class="muted" id="histStatus"></div>
+        </div>
+
+        <div id="history" class="list"></div>
       </section>
-
-      <!-- Cart -->
-      <section class="card cart-card">
-        <div class="row topbar">
-          <div>
-            <b>Cart</b>
-            <span id="sellerNameTag" class="tag hidden"></span>
-          </div>
-          <button id="btnClear" class="ghost">Clear</button>
-        </div>
-
-        <div id="cart"></div>
-
-        <div class="line"></div>
-
-        <div class="row totals">
-          <div class="row">
-            <label class="muted">Discount %</label>
-            <input
-              id="discount"
-              type="number"
-              min="0"
-              max="90"
-              step="1"
-              value="0"
-              class="discountInput"
-            />
-          </div>
-          <div class="right">
-            <div>Subtotal: <b id="subtotal">$0</b></div>
-            <div>Discount: <b id="discountAmt">$0</b></div>
-            <div class="total">Total: <span id="total">$0</span></div>
-          </div>
-        </div>
-
-        <div class="row actions">
-          <small class="muted" id="status"></small>
-          <button id="btnSave">Save &amp; Send to Discord</button>
-        </div>
-      </section>
-    </div>
-
-    <!-- ===== HISTORY VIEW (visible on #history) ===== -->
-    <section
-      id="viewHistory"
-      data-view="history"
-      class="card history-card hidden"
-      style="grid-column: 1 / -1;"
-    >
-      <div class="row topbar">
-        <div>
-          <b>Sales History</b>
-          <span class="muted">Last N hours</span>
-        </div>
-        <div class="row">
-          <select id="histSeller" class="hidden">
-            <option value="me" selected>My sales</option>
-            <option value="all">All sellers (admin)</option>
-          </select>
-          <select id="histRange">
-            <option value="6">Last 6h</option>
-            <option value="12">Last 12h</option>
-            <option value="24" selected>Last 24h (Today)</option>
-            <option value="48">Last 48h</option>
-            <option value="168">Last 7 days</option>
-          </select>
-          <button id="btnHistRefresh" class="ghost">Refresh</button>
-          <button id="btnBackBilling" class="ghost">⬅ Back</button>
-        </div>
-      </div>
-
-      <div class="row" style="justify-content:space-between; align-items:center;">
-        <div class="muted" id="histSummary">—</div>
-        <div class="muted" id="histStatus"></div>
-      </div>
-
-      <div id="history" class="list"></div>
-    </section>
-  </main>
+    </main>
+  </div>
 
   <!-- JS: module with Firebase + app logic -->
   <script type="module" src="script.js"></script>
