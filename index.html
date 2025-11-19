@@ -12,16 +12,58 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+
+  <!-- ==============================
+       LOGIN VIEW (shown when logged out)
+       ============================== -->
+  <section id="viewLogin" data-view="login" class="login-screen">
+    <div class="login-inner">
+      <!-- Optional logo/title above the box -->
+      <div class="login-header">
+        <img src="assets/GW.png" class="brand-logo" alt="Green Wonderland Logo">
+        <div class="login-title-text">
+          <div class="login-app-name">Green Wonderland</div>
+          <div class="login-subtitle">Staff Billing Panel</div>
+        </div>
+      </div>
+
+      <!-- Your animated login box -->
+      <div class="box">
+        <span class="borderLine"></span>
+        <form id="loginForm">
+          <h2>Sign In</h2>
+
+          <div class="inputBox">
+            <input id="loginEmail" type="text" required />
+            <span>Username</span>
+            <i></i>
+          </div>
+
+          <div class="inputBox">
+            <input id="loginPassword" type="password" required />
+            <span>Password</span>
+            <i></i>
+          </div>
+
+          <button type="button" id="btnLoginMain">Login</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==============================
+       APP VIEW (header + billing + history)
+       Visible only after login (script.js will toggle)
+       ============================== -->
+
   <header>
     <div class="brand">
-     <img src="assets/GW.png" class="brand-logo" alt="Green Wonderland Logo">
-     Green Wonderland — Billing
+      <img src="assets/GW.png" class="brand-logo" alt="Green Wonderland Logo">
+      Green Wonderland — Billing
     </div>
     <div class="row">
       <div id="authState" class="pill">Not signed in</div>
-      <input id="email" placeholder="email" />
-      <input id="password" type="password" placeholder="password" />
-      <button id="btnLogin">Sign In</button>
+      <!-- No email/password/Sign In here anymore -->
       <button id="btnLogout" class="ghost" disabled>Sign Out</button>
       <button id="btnHistory" class="ghost">📜 History</button>
     </div>
