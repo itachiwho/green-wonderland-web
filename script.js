@@ -175,7 +175,7 @@ onAuthStateChanged(auth, async (user) => {
     // ---- NEW LOGIN PAGE MODE ----
     updateShellVisibility(true);
     
-    // If old header login exists, hide the auth inputs/pill
+    // If old header login exists, hide the auth inputs
     ["authState", "email", "password", "btnLogin"].forEach(id => {
       const el = $(id);
       if (el) {
