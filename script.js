@@ -91,23 +91,73 @@ function clearAllUI() {
   setStatus("");
 }
 
+// ---- Simple view helper for login-shell split ----
+function updateShellVisibility(isLoggedIn) {
+  const viewLogin = $("viewLogin");   // new login page container
+  const appShell  = $("appShell");    // wrapper for header + main (you'll add in index.html)
+
+  if (!viewLogin || !appShell) {
+    // If these don't exist yet, do nothing (backwards compatible)
+    return;
+  }
+
+  if (isLoggedIn) {
+    viewLogin.classList.add("hidden");
+    appShell.classList.remove("hidden");
+  } else {
+    appShell.classList.add("hidden");
+    viewLogin.classList.remove("hidden");
+  }
+}
+
 // ---- Header navigation (hash routing) ----
 $("btnHistory")?.addEventListener("click", () => { location.hash = "#history"; });
 $("btnBackBilling")?.addEventListener("click", () => { location.hash = "#billing"; });
 
 // -------- AUTH ----------
-$("btnLogin")?.addEventListener("click", async () => {
+
+// Shared login function (used by both header login & new login form)
+async function handleLogin(email, password) {
   setStatus("");
-  const email = $("email")?.value?.trim();
-  const password = $("password")?.value;
-  if (!email || !password) return setStatus("Enter email & password.", true);
+  if (!email || !password) {
+    setStatus("Enter email & password.", true);
+    return;
+  }
   try {
-    const cred = await signInWithEmailAndPassword(auth, email, password);
+    const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
     state.user = cred.user;
-    // No more prompt – displayName will come from Firestore in initAdminAndSellers()
     setStatus("Signed in.");
   } catch (e) {
+    console.error(e);
     setStatus("Sign-in failed: " + (e?.message || e), true);
+  }
+}
+
+// Old header login (if those elements exist)
+$("btnLogin")?.addEventListener("click", async () => {
+  const email = $("email")?.value;
+  const password = $("password")?.value;
+  await handleLogin(email, password);
+});
+
+// New login form (animated box) — uses #loginEmail, #loginPassword, #btnLoginMain
+$("btnLoginMain")?.addEventListener("click", async (e) => {
+  e.preventDefault();
+  const email = $("loginEmail")?.value;
+  const password = $("loginPassword")?.value;
+  await handleLogin(email, password);
+});
+
+// Also allow Enter key inside login form
+["loginEmail", "loginPassword"].forEach(id => {
+  const el = $(id);
+  if (el) {
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        $("btnLoginMain")?.click();
+      }
+    });
   }
 });
 
@@ -122,7 +172,10 @@ onAuthStateChanged(auth, async (user) => {
   const logoutBtn = $("btnLogout");
 
   if (user) {
-    // 🔹 Hide login UI once signed in
+    // ---- NEW LOGIN PAGE MODE ----
+    updateShellVisibility(true);
+
+    // If old header login exists, hide the auth inputs/pill
     ["authState", "email", "password", "btnLogin"].forEach(id => {
       const el = $(id);
       if (el) {
@@ -144,7 +197,10 @@ onAuthStateChanged(auth, async (user) => {
       await loadHistory();
     }
   } else {
-    // 🔹 Show login UI again when signed out
+    // Signed out
+    updateShellVisibility(false);
+
+    // Show header login again if those elements exist
     ["authState", "email", "password", "btnLogin"].forEach(id => {
       const el = $(id);
       if (el) {
@@ -198,7 +254,7 @@ async function initAdminAndSellers() {
     const role = meData.role || null;
     state.isAdmin = (role === "admin");
 
-    // 🔹 NEW: set displayName priority: Firestore > Auth > email > "(no name)"
+    // displayName priority: Firestore > Auth > email > "(no name)"
     const nameFromFirestore = meData.displayName;
     const nameFromAuth = state.user.displayName;
     const fallback = state.user.email;
@@ -546,7 +602,7 @@ async function loadHistory() {
       limit(200)
     );
   } else {
-    // Specific seller (me or chosen uid) — requires composite index (you created it)
+    // Specific seller (me or chosen uid)
     const uid = (state.isAdmin && mode !== "me") ? mode : state.user.uid;
     qy = query(
       collection(db, "sales"),
