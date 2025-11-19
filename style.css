@@ -249,7 +249,7 @@ main {
   outline: none;
   border: none;
   box-shadow: none;
-  color: #e7ffee;
+  color: #020404;
   font-size: 1em;
   letter-spacing: 0.05em;
   transition: 0.5s;
@@ -305,7 +305,7 @@ main {
   font-weight: 600;
   width: 100%;
   max-width: 160px;
-  background: var(--accent);
+  background: #3ca80c;
   color: #020404;
   box-shadow: 0 0 16px rgba(0, 208, 132, 0.6);
   transition:
