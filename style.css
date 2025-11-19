@@ -945,10 +945,3 @@ button:disabled {
     flex: 1 1 130px;
   }
 }
-
-/* Hide both login + app shell until Firebase auth finishes */
-body.auth-pending #viewLogin,
-body.auth-pending #appShell {
-  visibility: hidden;
-}
-
