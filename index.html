@@ -14,40 +14,55 @@
 <body>
 
   <!-- =========================
-       LOGIN VIEW (shown when logged OUT)
-       ========================== -->
+       LOGIN SCREEN (first view)
+       ========================= -->
   <div id="viewLogin" class="login-screen">
-    <div class="box">
-      <span class="borderLine"></span>
-      <form>
-        <h2>Sign in</h2>
-
-        <div class="inputBox">
-          <input type="email" id="loginEmail" required />
-          <span>Email</span>
-          <i></i>
+    <div class="login-inner">
+      <!-- Small logo + title above box -->
+      <div class="login-header">
+        <img src="assets/GW.png" class="brand-logo" alt="Green Wonderland Logo" />
+        <div class="login-title-text">
+          <div class="login-app-name">GREEN WONDERLAND</div>
+          <div class="login-subtitle">Seller Billing Portal</div>
         </div>
+      </div>
 
-        <div class="inputBox">
-          <input type="password" id="loginPassword" required />
-          <span>Password</span>
-          <i></i>
-        </div>
+      <!-- Your glowing login box -->
+      <div class="box">
+        <span class="borderLine"></span>
+        <form id="loginForm" autocomplete="off">
+          <h2>Sign in</h2>
 
-        <!-- links row not needed, but keeping block in case you want later -->
-        <div class="links">
-          <!-- No forgot / signup for now -->
-        </div>
+          <div class="inputBox">
+            <input type="email" id="loginEmail" required />
+            <span>Email</span>
+            <i></i>
+          </div>
 
-        <input type="submit" id="btnLoginMain" value="Login" />
-      </form>
+          <div class="inputBox">
+            <input type="password" id="loginPassword" required />
+            <span>Password</span>
+            <i></i>
+          </div>
+
+          <!-- We removed Forgot Password / Signup as you said -->
+          <div class="links">
+            <!-- left empty on purpose -->
+          </div>
+
+          <!-- Main login button -->
+          <button type="button" id="btnLoginMain">Login</button>
+
+          <!-- Small status for login errors, optional -->
+          <small id="loginStatus" class="muted" style="margin-top:8px; display:block;"></small>
+        </form>
+      </div>
     </div>
   </div>
 
   <!-- =========================
-       APP SHELL (header + billing UI)
-       Hidden until user is logged in
-       ========================== -->
+       MAIN APP (after login)
+       ========================= -->
   <div id="appShell" class="hidden">
     <header>
       <div class="brand">
@@ -55,14 +70,8 @@
         Green Wonderland — Billing
       </div>
       <div class="row">
-        <!-- These will be auto-hidden by script.js after login -->
-        <div id="authState" class="pill">Not signed in</div>
-        <input id="email" placeholder="email" />
-        <input id="password" type="password" placeholder="password" />
-        <button id="btnLogin">Sign In</button>
-
-        <!-- Sign out + history -->
-        <button id="btnLogout" class="ghost" disabled>Sign Out</button>
+        <div id="authState" class="pill">Signed in</div>
+        <button id="btnLogout" class="ghost">Sign Out</button>
         <button id="btnHistory" class="ghost">📜 History</button>
       </div>
     </header>
