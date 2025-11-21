@@ -48,6 +48,9 @@ const setHistSummary = (msg)=> {
   if (el) el.textContent = msg || "";
 };
 
+// 🔹 While Firebase is deciding if user is logged in, hide UI via CSS
+document.body.classList.add("auth-pending");
+
 // Format like "DD-MM-YYYY | h:mm AM" in Dhaka (client-side view)
 function formatDhakaLocal(dateLike) {
   const tz = "Asia/Dhaka";
@@ -233,6 +236,9 @@ onAuthStateChanged(auth, async (user) => {
     state.sellers = [];
     location.hash = "#billing";
   }
+
+  // ✅ Auth state has resolved (either logged in or logged out) → show correct UI
+  document.body.classList.remove("auth-pending");
 });
 
 // -------- ADMIN DETECTION + SELLER LIST ----------
