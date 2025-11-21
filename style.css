@@ -945,3 +945,8 @@ button:disabled {
     flex: 1 1 130px;
   }
 }
+
+body.auth-pending #viewLogin,
+body.auth-pending #appShell {
+  visibility: hidden;
+}
